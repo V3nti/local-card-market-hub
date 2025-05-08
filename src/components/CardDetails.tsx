@@ -23,6 +23,33 @@ export function CardDetails({
 }: CardDetailsProps) {
   if (!card) return null;
 
+  // Generate dynamic display of card fields based on TCG type
+  const renderCardFields = () => {
+    const baseFields = [
+      { label: "Card Name", value: card.name },
+      { label: "Rarity", value: card.rarity },
+    ];
+
+    const specificFields = Object.entries(card)
+      .filter(([key]) => 
+        !['id', 'name', 'rarity', 'image', 'condition', 'price', 'seller', 'description'].includes(key))
+      .map(([key, value]) => ({
+        label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+        value
+      }));
+      
+    const conditionField = isMarketCard ? [
+      { label: "Condition", value: card.condition, highlight: true }
+    ] : [];
+    
+    const marketFields = isMarketCard ? [
+      { label: "Price", value: `$${card.price}`, highlight: false },
+      { label: "Seller", value: card.seller, highlight: false },
+    ] : [];
+
+    return [...baseFields, ...specificFields, ...conditionField, ...marketFields];
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
@@ -32,37 +59,34 @@ export function CardDetails({
         
         <div className="grid gap-6 py-4">
           <div className="flex justify-center">
-            <div className="bg-muted h-64 w-48 rounded-md"></div>
+            {card.image ? (
+              <img 
+                src={card.image} 
+                alt={card.name} 
+                className="h-64 object-contain rounded-md"
+              />
+            ) : (
+              <div className="bg-muted h-64 w-48 rounded-md"></div>
+            )}
           </div>
           
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              <div className="text-sm text-muted-foreground">Card Name:</div>
-              <div className="font-medium">{card.name}</div>
-              
-              <div className="text-sm text-muted-foreground">Type:</div>
-              <div className="font-medium">{isMarketCard ? card.type : ""}</div>
-              
-              <div className="text-sm text-muted-foreground">Rarity:</div>
-              <div className="font-medium">{card.rarity}</div>
-              
-              {isMarketCard && (
-                <>
-                  <div className="text-sm text-muted-foreground">Condition:</div>
+              {renderCardFields().map((field, index) => (
+                <React.Fragment key={index}>
+                  <div className="text-sm text-muted-foreground">{field.label}:</div>
                   <div className="font-medium">
-                    <span className="bg-primary/20 text-primary px-2 py-0.5 rounded">{card.condition}</span>
+                    {field.highlight ? (
+                      <span className="bg-primary/20 text-primary px-2 py-0.5 rounded">{field.value}</span>
+                    ) : (
+                      field.value || "-"
+                    )}
                   </div>
-                  
-                  <div className="text-sm text-muted-foreground">Price:</div>
-                  <div className="font-semibold">${card.price}</div>
-                  
-                  <div className="text-sm text-muted-foreground">Seller:</div>
-                  <div className="font-medium">{card.seller}</div>
-                </>
-              )}
+                </React.Fragment>
+              ))}
             </div>
             
-            {isMarketCard && (
+            {(isMarketCard || card.description) && (
               <div>
                 <div className="text-sm text-muted-foreground mb-1">Description:</div>
                 <p className="text-sm">

@@ -93,7 +93,7 @@ export default function MyCardsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">My Cards</h2>
+        <h2 className="text-2xl font-bold">Collection</h2>
         <Link to="/my-cards/add">
           <Button size="sm" className="flex items-center gap-1">
             <Plus size={16} /> Add Card

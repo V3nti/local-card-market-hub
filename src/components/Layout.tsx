@@ -39,7 +39,7 @@ export function Layout() {
             className={`flex flex-col items-center p-2 ${isActive('/my-cards') ? 'text-primary' : 'text-muted-foreground'}`}
           >
             <CreditCard size={24} />
-            <span className="text-xs mt-1">My Cards</span>
+            <span className="text-xs mt-1">Collection</span>
           </NavLink>
           
           <NavLink 
