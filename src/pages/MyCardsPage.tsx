@@ -1,42 +1,88 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { Plus, Pencil } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { CardDetails } from "@/components/CardDetails";
 
 const TCG_TYPES = ["MTG", "Pokemon", "Yu-Gi-Oh", "One Piece", "Flesh and Blood"];
 
-// Sample card data structure
-const SAMPLE_CARDS = {
-  "MTG": [
-    { id: "1", name: "Jace, the Mind Sculptor", rarity: "Mythic Rare", image: "" },
-    { id: "2", name: "Lightning Bolt", rarity: "Common", image: "" }
-  ],
-  "Pokemon": [
-    { id: "3", name: "Charizard", rarity: "Holo Rare", image: "" }
-  ],
-  "Yu-Gi-Oh": [],
-  "One Piece": [],
-  "Flesh and Blood": []
+// Create an object to store cards with TCG type as key
+interface Card {
+  id: string;
+  name: string;
+  rarity: string;
+  image: string;
+}
+
+// Initial empty state for card collections
+const initialCardState = () => {
+  const storedCards = localStorage.getItem('cardCollections');
+  if (storedCards) {
+    return JSON.parse(storedCards);
+  }
+  
+  return {
+    "MTG": [
+      { id: "1", name: "Jace, the Mind Sculptor", rarity: "Mythic Rare", image: "" },
+      { id: "2", name: "Lightning Bolt", rarity: "Common", image: "" }
+    ],
+    "Pokemon": [
+      { id: "3", name: "Charizard", rarity: "Holo Rare", image: "" }
+    ],
+    "Yu-Gi-Oh": [],
+    "One Piece": [],
+    "Flesh and Blood": []
+  };
 };
 
 export default function MyCardsPage() {
   const [selectedTcg, setSelectedTcg] = useState("MTG");
+  const [cardCollections, setCardCollections] = useState<Record<string, Card[]>>(initialCardState);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check for new card data from navigation state
+  useEffect(() => {
+    if (location.state?.newCard) {
+      const { newCard, tcgType } = location.state;
+      
+      // Add the new card to the collection
+      setCardCollections(prev => {
+        const updatedCollection = {
+          ...prev,
+          [tcgType]: [...(prev[tcgType] || []), {
+            ...newCard,
+            id: Date.now().toString() // Ensure unique ID
+          }]
+        };
+        
+        // Store updated collection in localStorage
+        localStorage.setItem('cardCollections', JSON.stringify(updatedCollection));
+        
+        return updatedCollection;
+      });
+      
+      // Show success toast
+      toast({
+        title: "Card Added",
+        description: `${newCard.name} has been added to your collection`
+      });
+      
+      // Clear navigation state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate]);
   
   const handleCardClick = (id: string) => {
-    toast({
-      title: "Card details",
-      description: "Opening card details view",
-    });
-    // This would navigate to a detail page in a real app
-    console.log("Card clicked:", id);
+    const card = cardCollections[selectedTcg].find(c => c.id === id) || null;
+    setSelectedCard(card);
   };
 
-  const handleEditCard = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Prevent triggering the card click
+  const handleEditCard = (id: string) => {
     toast({
       title: "Edit Card",
       description: "Opening card edit form",
@@ -70,8 +116,8 @@ export default function MyCardsPage() {
       </div>
       
       <div className="grid grid-cols-2 gap-4">
-        {SAMPLE_CARDS[selectedTcg as keyof typeof SAMPLE_CARDS]?.length > 0 ? (
-          SAMPLE_CARDS[selectedTcg as keyof typeof SAMPLE_CARDS].map((card) => (
+        {cardCollections[selectedTcg]?.length > 0 ? (
+          cardCollections[selectedTcg].map((card) => (
             <div 
               key={card.id}
               className="bg-card rounded-lg p-4 shadow flex flex-col items-center cursor-pointer relative"
@@ -82,7 +128,10 @@ export default function MyCardsPage() {
               <p className="text-sm text-muted-foreground">{card.rarity}</p>
               <button 
                 className="absolute top-2 right-2 p-1 bg-primary/10 hover:bg-primary/20 rounded-full transition-colors"
-                onClick={(e) => handleEditCard(e, card.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEditCard(card.id);
+                }}
               >
                 <Pencil size={16} />
               </button>
@@ -94,6 +143,14 @@ export default function MyCardsPage() {
           </div>
         )}
       </div>
+
+      {/* Card Details Dialog */}
+      <CardDetails
+        card={selectedCard}
+        isOpen={!!selectedCard}
+        onClose={() => setSelectedCard(null)}
+        onEdit={() => selectedCard && handleEditCard(selectedCard.id)}
+      />
     </div>
   );
 }

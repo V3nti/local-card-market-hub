@@ -1,7 +1,9 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { ChatConversation } from "@/components/ChatConversation";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 const MESSAGES = [
   {
@@ -29,15 +31,17 @@ const MESSAGES = [
 
 export default function MessagesPage() {
   const navigate = useNavigate();
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
   
   const handleMessageClick = (id: string) => {
+    setSelectedChat(id);
     toast({
       title: "Conversation",
       description: "Opening chat with " + MESSAGES.find(m => m.id === id)?.sender
     });
-    // This would navigate to a conversation page in a real app
-    console.log("Message clicked:", id);
   };
+
+  const selectedChatDetails = selectedChat ? MESSAGES.find(m => m.id === selectedChat) : null;
   
   return (
     <div className="space-y-6">
@@ -61,6 +65,21 @@ export default function MessagesPage() {
           </div>
         ))}
       </div>
+
+      <Sheet open={!!selectedChat} onOpenChange={() => setSelectedChat(null)}>
+        <SheetContent side="right" className="p-0 w-full sm:max-w-md">
+          {selectedChatDetails && (
+            <ChatConversation 
+              contact={{
+                id: selectedChatDetails.id,
+                sender: selectedChatDetails.sender,
+                avatar: selectedChatDetails.avatar
+              }}
+              onClose={() => setSelectedChat(null)}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
