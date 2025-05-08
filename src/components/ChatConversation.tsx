@@ -18,21 +18,49 @@ interface ChatConversationProps {
     sender: string;
     avatar: string;
   };
+  cardInfo?: any;
   onClose: () => void;
 }
 
-export function ChatConversation({ contact, onClose }: ChatConversationProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      sender: contact.sender,
-      content: "Hi, is the Charizard card still available?",
-      timestamp: "2d ago",
-      isMe: false,
-    }
-  ]);
+export function ChatConversation({ contact, cardInfo, onClose }: ChatConversationProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Generate initial messages based on whether a card is attached
+    const initialMessages: Message[] = [];
+    
+    if (cardInfo) {
+      initialMessages.push({
+        id: "auto-1",
+        sender: "You",
+        content: `Hi, I'm interested in your ${cardInfo.name} card that you have listed for $${cardInfo.price}.`,
+        timestamp: "Just now",
+        isMe: true,
+      });
+      
+      // Add seller's response
+      initialMessages.push({
+        id: "auto-2",
+        sender: contact.sender,
+        content: `Hello! Yes, the ${cardInfo.name} is still available. Is there anything specific you'd like to know about it?`,
+        timestamp: "Just now",
+        isMe: false,
+      });
+    } else {
+      // Default message if no card is attached
+      initialMessages.push({
+        id: "1",
+        sender: contact.sender,
+        content: "Hi, how can I help you today?",
+        timestamp: "Just now",
+        isMe: false,
+      });
+    }
+    
+    setMessages(initialMessages);
+  }, [cardInfo, contact.sender]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,7 +88,7 @@ export function ChatConversation({ contact, onClose }: ChatConversationProps) {
         const reply: Message = {
           id: (Date.now() + 1).toString(),
           sender: contact.sender,
-          content: "Thanks for the reply! Are you willing to negotiate on the price?",
+          content: "Thanks for your message! I'll get back to you soon.",
           timestamp: "Just now",
           isMe: false,
         };
@@ -85,6 +113,16 @@ export function ChatConversation({ contact, onClose }: ChatConversationProps) {
         <div className="h-10 w-10 rounded-full bg-muted"></div>
         <span className="font-medium">{contact.sender}</span>
       </div>
+      
+      {cardInfo && (
+        <div className="p-3 bg-muted/30 border-b flex items-center gap-3">
+          <div className="h-12 w-8 bg-muted rounded"></div>
+          <div className="flex-1">
+            <p className="font-medium text-sm">{cardInfo.name}</p>
+            <p className="text-xs text-muted-foreground">${cardInfo.price} • {cardInfo.condition}</p>
+          </div>
+        </div>
+      )}
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((message) => (

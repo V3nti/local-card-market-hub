@@ -4,6 +4,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Pencil, MessageSquare } from "lucide-react";
 
+interface CardField {
+  label: string;
+  value: any;
+  highlight?: boolean;
+}
+
 interface CardDetailsProps {
   card: any;
   isOpen: boolean;
@@ -25,12 +31,12 @@ export function CardDetails({
 
   // Generate dynamic display of card fields based on TCG type
   const renderCardFields = () => {
-    const baseFields = [
+    const baseFields: CardField[] = [
       { label: "Card Name", value: card.name },
       { label: "Rarity", value: card.rarity },
     ];
 
-    const specificFields = Object.entries(card)
+    const specificFields: CardField[] = Object.entries(card)
       .filter(([key]) => 
         !['id', 'name', 'rarity', 'image', 'condition', 'price', 'seller', 'description'].includes(key))
       .map(([key, value]) => ({
@@ -38,13 +44,13 @@ export function CardDetails({
         value
       }));
       
-    const conditionField = isMarketCard ? [
+    const conditionField: CardField[] = isMarketCard ? [
       { label: "Condition", value: card.condition, highlight: true }
     ] : [];
     
-    const marketFields = isMarketCard ? [
-      { label: "Price", value: `$${card.price}`, highlight: false },
-      { label: "Seller", value: card.seller, highlight: false },
+    const marketFields: CardField[] = isMarketCard ? [
+      { label: "Price", value: `$${card.price}` },
+      { label: "Seller", value: card.seller },
     ] : [];
 
     return [...baseFields, ...specificFields, ...conditionField, ...marketFields];
