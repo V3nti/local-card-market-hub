@@ -225,7 +225,9 @@ export default function AddCardPage() {
               <Label>Card Search</Label>
               <CardAutoComplete 
                 tcgType={formData.tcgType} 
-                onCardSelect={handleCardSelection}
+                onSelect={handleCardSelection}
+                value={formData.name}
+                onChange={(value) => handleInputChange('name', value)}
               />
             </div>
             

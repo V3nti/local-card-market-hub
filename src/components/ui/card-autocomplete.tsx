@@ -17,64 +17,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-// Define types for the different card APIs
-interface MtgCard {
-  name: string;
-  rarity?: string;
-  color_identity?: string[];
-  type_line?: string;
-  mana_cost?: string;
-  image_uris?: {
-    normal?: string;
-    small?: string;
-  };
-  card_faces?: Array<{
-    image_uris?: {
-      normal?: string;
-      small?: string;
-    };
-  }>;
-  set?: string;
-  set_name?: string;
-}
-
-interface PokemonCard {
-  name: string;
-  rarity?: string;
-  types?: string[];
-  hp?: string;
-  subtypes?: string[];
-  images?: {
-    small?: string;
-    large?: string;
-  };
-  set?: {
-    name?: string;
-  };
-}
-
-interface YuGiOhCard {
-  name: string;
-  type?: string;
-  race?: string;
-  attribute?: string;
-  level?: number;
-  card_sets?: Array<{
-    set_name?: string;
-    set_rarity?: string;
-  }>;
-  card_images?: Array<{
-    image_url?: string;
-  }>;
-}
+import { MtgCard, PokemonCard, YuGiOhCard } from "@/types/card-types";
 
 // Union type for all card types
 type CardData = MtgCard | PokemonCard | YuGiOhCard;
 
 interface CardAutoCompleteProps {
-  value: string;
-  onChange: (value: string) => void;
+  value?: string;
+  onChange?: (value: string) => void;
   onSelect: (card: CardData) => void;
   tcgType: string;
   className?: string;
@@ -92,7 +42,7 @@ const API_ENDPOINTS: Record<string, string | null> = {
 };
 
 export function CardAutoComplete({
-  value,
+  value = "",
   onChange,
   onSelect,
   tcgType,
@@ -100,14 +50,20 @@ export function CardAutoComplete({
   placeholder = "Card name",
   disabled = false,
 }: CardAutoCompleteProps) {
+  const [inputValue, setInputValue] = useState(value);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const minCharsToSearch = 3;
 
+  // Update internal state if prop changes
+  useEffect(() => {
+    setInputValue(value);
+  }, [value]);
+
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (!value || value.length < minCharsToSearch || !API_ENDPOINTS[tcgType]) {
+      if (!inputValue || inputValue.length < minCharsToSearch || !API_ENDPOINTS[tcgType]) {
         setSuggestions([]);
         return;
       }
@@ -123,18 +79,18 @@ export function CardAutoComplete({
         }
         
         if (tcgType === "MTG") {
-          const response = await fetch(`${endpoint}${encodeURIComponent(value)}`);
+          const response = await fetch(`${endpoint}${encodeURIComponent(inputValue)}`);
           const data: { data?: string[] } = await response.json();
           setSuggestions(data.data || []);
         } 
         else if (tcgType === "Pokemon") {
-          const response = await fetch(`${endpoint}${encodeURIComponent(value)}*`);
+          const response = await fetch(`${endpoint}${encodeURIComponent(inputValue)}*`);
           const data: { data?: PokemonCard[] } = await response.json();
           const names = data.data?.map((card) => card.name) || [];
           setSuggestions(names);
         }
         else if (tcgType === "Yu-Gi-Oh") {
-          const response = await fetch(`${endpoint}${encodeURIComponent(value)}`);
+          const response = await fetch(`${endpoint}${encodeURIComponent(inputValue)}`);
           const data: { data?: YuGiOhCard[] } = await response.json();
           if (data.data) {
             // Get unique card names
@@ -162,10 +118,17 @@ export function CardAutoComplete({
     }, 300);
     
     return () => clearTimeout(timerId);
-  }, [value, tcgType]);
+  }, [inputValue, tcgType]);
   
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+    if (onChange) {
+      onChange(value);
+    }
+  };
+
   const handleSelectSuggestion = (suggestion: string) => {
-    onChange(suggestion);
+    handleInputChange(suggestion);
     setIsOpen(false);
     
     // Fetch full card data
@@ -213,9 +176,9 @@ export function CardAutoComplete({
         <div className={cn("relative", className)}>
           <Input
             type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onFocus={() => value.length >= minCharsToSearch && suggestions.length > 0 && setIsOpen(true)}
+            value={inputValue}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={() => inputValue.length >= minCharsToSearch && suggestions.length > 0 && setIsOpen(true)}
             placeholder={placeholder}
             disabled={disabled}
             className="w-full"
