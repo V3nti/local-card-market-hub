@@ -18,10 +18,64 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+// Define types for the different card APIs
+interface MtgCard {
+  name: string;
+  rarity?: string;
+  color_identity?: string[];
+  type_line?: string;
+  mana_cost?: string;
+  image_uris?: {
+    normal?: string;
+    small?: string;
+  };
+  card_faces?: Array<{
+    image_uris?: {
+      normal?: string;
+      small?: string;
+    };
+  }>;
+  set?: string;
+  set_name?: string;
+}
+
+interface PokemonCard {
+  name: string;
+  rarity?: string;
+  types?: string[];
+  hp?: string;
+  subtypes?: string[];
+  images?: {
+    small?: string;
+    large?: string;
+  };
+  set?: {
+    name?: string;
+  };
+}
+
+interface YuGiOhCard {
+  name: string;
+  type?: string;
+  race?: string;
+  attribute?: string;
+  level?: number;
+  card_sets?: Array<{
+    set_name?: string;
+    set_rarity?: string;
+  }>;
+  card_images?: Array<{
+    image_url?: string;
+  }>;
+}
+
+// Union type for all card types
+type CardData = MtgCard | PokemonCard | YuGiOhCard;
+
 interface CardAutoCompleteProps {
   value: string;
   onChange: (value: string) => void;
-  onSelect: (card: any) => void;
+  onSelect: (card: CardData) => void;
   tcgType: string;
   className?: string;
   placeholder?: string;
@@ -70,22 +124,22 @@ export function CardAutoComplete({
         
         if (tcgType === "MTG") {
           const response = await fetch(`${endpoint}${encodeURIComponent(value)}`);
-          const data = await response.json();
+          const data: { data?: string[] } = await response.json();
           setSuggestions(data.data || []);
         } 
         else if (tcgType === "Pokemon") {
           const response = await fetch(`${endpoint}${encodeURIComponent(value)}*`);
-          const data = await response.json();
-          const names = data.data?.map((card: any) => card.name) || [];
+          const data: { data?: PokemonCard[] } = await response.json();
+          const names = data.data?.map((card) => card.name) || [];
           setSuggestions(names);
         }
         else if (tcgType === "Yu-Gi-Oh") {
           const response = await fetch(`${endpoint}${encodeURIComponent(value)}`);
-          const data = await response.json();
+          const data: { data?: YuGiOhCard[] } = await response.json();
           if (data.data) {
             // Get unique card names
             const uniqueNames = Array.from(
-              new Set(data.data.map((card: any) => card.name))
+              new Set(data.data.map((card) => card.name))
             ) as string[];
             setSuggestions(uniqueNames);
           } else {
@@ -132,14 +186,14 @@ export function CardAutoComplete({
         const response = await fetch(endpoint);
         const data = await response.json();
         
-        let cardData;
+        let cardData: CardData | null = null;
         
         if (tcgType === "MTG") {
-          cardData = data;
+          cardData = data as MtgCard;
         } else if (tcgType === "Pokemon") {
-          cardData = data.data[0];
+          cardData = (data.data && data.data[0]) as PokemonCard;
         } else if (tcgType === "Yu-Gi-Oh") {
-          cardData = data.data[0];
+          cardData = (data.data && data.data[0]) as YuGiOhCard;
         }
         
         if (cardData) {

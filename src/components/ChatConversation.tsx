@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
+import { CardData } from "./CardDetails";
 
 interface Message {
   id: string;
@@ -12,13 +13,15 @@ interface Message {
   isMe: boolean;
 }
 
+interface Contact {
+  id: string;
+  sender: string;
+  avatar: string;
+}
+
 interface ChatConversationProps {
-  contact: {
-    id: string;
-    sender: string;
-    avatar: string;
-  };
-  cardInfo?: any;
+  contact: Contact;
+  cardInfo?: CardData;
   onClose: () => void;
 }
 

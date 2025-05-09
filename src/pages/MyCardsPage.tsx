@@ -5,20 +5,20 @@ import { Toggle } from "@/components/ui/toggle";
 import { Plus, Pencil } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { CardDetails } from "@/components/CardDetails";
+import { CardDetails, CardData } from "@/components/CardDetails";
 
 const TCG_TYPES = ["MTG", "Pokemon", "Yu-Gi-Oh", "One Piece", "Flesh and Blood"];
 
-// Create an object to store cards with TCG type as key
-interface Card {
+// Create an interface for the cards in the collection
+interface CollectionCard extends CardData {
   id: string;
   name: string;
-  rarity: string;
-  image: string;
+  rarity?: string;
+  image?: string;
 }
 
 // Initial empty state for card collections
-const initialCardState = () => {
+const initialCardState = (): Record<string, CollectionCard[]> => {
   const storedCards = localStorage.getItem('cardCollections');
   if (storedCards) {
     return JSON.parse(storedCards);
@@ -38,23 +38,29 @@ const initialCardState = () => {
   };
 };
 
+interface LocationState {
+  newCard?: CollectionCard;
+  tcgType?: string;
+}
+
 export default function MyCardsPage() {
   const [selectedTcg, setSelectedTcg] = useState("MTG");
-  const [cardCollections, setCardCollections] = useState<Record<string, Card[]>>(initialCardState);
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [cardCollections, setCardCollections] = useState<Record<string, CollectionCard[]>>(initialCardState);
+  const [selectedCard, setSelectedCard] = useState<CollectionCard | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const locationState = location.state as LocationState | undefined;
   
   // Check for new card data from navigation state
   useEffect(() => {
-    if (location.state?.newCard) {
-      const { newCard, tcgType } = location.state;
+    if (locationState?.newCard) {
+      const { newCard, tcgType } = locationState;
       
       // Add the new card to the collection
       setCardCollections(prev => {
         const updatedCollection = {
           ...prev,
-          [tcgType]: [...(prev[tcgType] || []), {
+          [tcgType || "MTG"]: [...(prev[tcgType || "MTG"] || []), {
             ...newCard,
             id: Date.now().toString() // Ensure unique ID
           }]
@@ -75,7 +81,7 @@ export default function MyCardsPage() {
       // Clear navigation state
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state, navigate]);
+  }, [locationState, navigate, location.pathname]);
   
   const handleCardClick = (id: string) => {
     const card = cardCollections[selectedTcg].find(c => c.id === id) || null;

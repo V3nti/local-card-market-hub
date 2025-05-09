@@ -6,17 +6,30 @@ import { Pencil, MessageSquare } from "lucide-react";
 
 interface CardField {
   label: string;
-  value: any;
+  value: string | number | boolean | undefined | null;
   highlight?: boolean;
 }
 
-interface CardDetailsProps {
-  card: any;
+export interface CardDetailsProps {
+  card: CardData | null;
   isOpen: boolean;
   onClose: () => void;
   onEdit?: () => void;
   onContact?: () => void;
   isMarketCard?: boolean;
+}
+
+// Define types for our card data
+export interface CardData {
+  id?: string;
+  name: string;
+  rarity?: string;
+  image?: string;
+  condition?: string;
+  price?: number;
+  seller?: string;
+  description?: string;
+  [key: string]: any; // Allow for flexible fields
 }
 
 export function CardDetails({ 
@@ -44,12 +57,12 @@ export function CardDetails({
         value
       }));
       
-    const conditionField: CardField[] = isMarketCard ? [
+    const conditionField: CardField[] = isMarketCard && card.condition ? [
       { label: "Condition", value: card.condition, highlight: true }
     ] : [];
     
     const marketFields: CardField[] = isMarketCard ? [
-      { label: "Price", value: `$${card.price}` },
+      { label: "Price", value: card.price !== undefined ? `$${card.price}` : undefined },
       { label: "Seller", value: card.seller },
     ] : [];
 
@@ -83,9 +96,15 @@ export function CardDetails({
                   <div className="text-sm text-muted-foreground">{field.label}:</div>
                   <div className="font-medium">
                     {field.highlight ? (
-                      <span className="bg-primary/20 text-primary px-2 py-0.5 rounded">{field.value}</span>
+                      <span className="bg-primary/20 text-primary px-2 py-0.5 rounded">
+                        {field.value !== undefined && field.value !== null 
+                          ? String(field.value) 
+                          : "-"}
+                      </span>
                     ) : (
-                      field.value || "-"
+                      field.value !== undefined && field.value !== null 
+                        ? String(field.value) 
+                        : "-"
                     )}
                   </div>
                 </React.Fragment>

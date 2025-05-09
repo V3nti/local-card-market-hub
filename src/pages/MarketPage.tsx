@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { CardDetails } from "@/components/CardDetails";
+import { CardDetails, CardData } from "@/components/CardDetails";
 import { ChatConversation } from "@/components/ChatConversation";
 import {
   Popover,
@@ -19,9 +18,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
+import { CardListing } from "@/types/card-types";
 
 // Sample market listings
-const MARKET_LISTINGS = [
+const MARKET_LISTINGS: CardListing[] = [
   {
     id: "1",
     name: "Black Lotus",
@@ -66,19 +66,19 @@ const CONDITION_OPTIONS = ["All", "M", "NM", "LP", "MP", "HP"];
 
 export default function MarketPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [selectedCard, setSelectedCard] = useState<CardListing | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<string>("");
   const [filterTcg, setFilterTcg] = useState("All");
   const [filterCondition, setFilterCondition] = useState("All");
-  const [priceRange, setPriceRange] = useState([0, 10000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [maxDistance, setMaxDistance] = useState(25); // Default from profile
   
-  const handleCardClick = (card: any) => {
+  const handleCardClick = (card: CardListing) => {
     setSelectedCard(card);
   };
   
-  const handleContactSeller = (sellerId: string, card: any) => {
+  const handleContactSeller = (sellerId: string, card: CardListing) => {
     setSelectedSeller(sellerId);
     setSelectedCard(card);
     setShowChat(true);
@@ -173,7 +173,7 @@ export default function MarketPage() {
                     min={0}
                     max={10000}
                     step={100}
-                    onValueChange={setPriceRange}
+                    onValueChange={(value) => setPriceRange(value as [number, number])}
                   />
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>${priceRange[0]}</span>
@@ -189,7 +189,7 @@ export default function MarketPage() {
                   min={1}
                   max={100}
                   step={1}
-                  onValueChange={([value]) => setMaxDistance(value)}
+                  onValueChange={(value) => setMaxDistance(value[0])}
                 />
               </div>
             </div>
@@ -246,7 +246,7 @@ export default function MarketPage() {
 
       {/* Card Details Dialog */}
       <CardDetails
-        card={selectedCard}
+        card={selectedCard as CardData}
         isOpen={!!selectedCard && !showChat}
         onClose={() => setSelectedCard(null)}
         onContact={() => selectedCard && handleContactSeller(selectedCard.seller, selectedCard)}
@@ -263,7 +263,7 @@ export default function MarketPage() {
                 sender: selectedSeller,
                 avatar: ""
               }}
-              cardInfo={selectedCard}
+              cardInfo={selectedCard as CardData}
               onClose={() => setShowChat(false)}
             />
           )}
