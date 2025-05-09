@@ -1,6 +1,6 @@
 
 import * as React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
@@ -153,7 +153,6 @@ export function CardAutoComplete({
     fetchCardData();
   };
 
-  // Use the Command component from shadcn/ui for better autocomplete
   return (
     <Popover open={isOpen && suggestions.length > 0} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
