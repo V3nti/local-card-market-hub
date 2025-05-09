@@ -4,6 +4,19 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface CardAutoCompleteProps {
   value: string;
@@ -36,23 +49,7 @@ export function CardAutoComplete({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const minCharsToSearch = 3;
-
-  useEffect(() => {
-    // Close dropdown when clicking outside
-    function handleClickOutside(event: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -79,7 +76,8 @@ export function CardAutoComplete({
         else if (tcgType === "Pokemon") {
           const response = await fetch(`${endpoint}${encodeURIComponent(value)}*`);
           const data = await response.json();
-          setSuggestions(data.data.map((card: any) => card.name) || []);
+          const names = data.data?.map((card: any) => card.name) || [];
+          setSuggestions(names);
         }
         else if (tcgType === "Yu-Gi-Oh") {
           const response = await fetch(`${endpoint}${encodeURIComponent(value)}`);
@@ -88,7 +86,7 @@ export function CardAutoComplete({
             // Get unique card names
             const uniqueNames = Array.from(
               new Set(data.data.map((card: any) => card.name))
-            );
+            ) as string[];
             setSuggestions(uniqueNames);
           } else {
             setSuggestions([]);
@@ -155,43 +153,47 @@ export function CardAutoComplete({
     fetchCardData();
   };
 
-  const showSuggestions = value.length >= minCharsToSearch && isOpen && suggestions.length > 0;
-
+  // Use the Command component from shadcn/ui for better autocomplete
   return (
-    <div className={cn("relative", className)} ref={wrapperRef}>
-      <div className="relative">
-        <Input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => value.length >= minCharsToSearch && setSuggestions.length > 0 && setIsOpen(true)}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="pr-10"
-        />
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-          {loading ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-          ) : (
-            <Search className="h-4 w-4" />
-          )}
+    <Popover open={isOpen && suggestions.length > 0} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <div className={cn("relative", className)}>
+          <Input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onFocus={() => value.length >= minCharsToSearch && suggestions.length > 0 && setIsOpen(true)}
+            placeholder={placeholder}
+            disabled={disabled}
+            className="w-full"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+            {loading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+          </div>
         </div>
-      </div>
-      
-      {showSuggestions && (
-        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-background p-1 shadow-md">
-          {suggestions.slice(0, 10).map((suggestion, index) => (
-            <div
-              key={index}
-              className="cursor-pointer rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-              onClick={() => handleSelectSuggestion(suggestion)}
-            >
-              {suggestion}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0" align="start">
+        <Command>
+          <CommandList>
+            <CommandGroup>
+              {suggestions.slice(0, 10).map((suggestion, index) => (
+                <CommandItem 
+                  key={index}
+                  onSelect={() => handleSelectSuggestion(suggestion)}
+                  className="cursor-pointer"
+                >
+                  {suggestion}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            <CommandEmpty>No results found</CommandEmpty>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
